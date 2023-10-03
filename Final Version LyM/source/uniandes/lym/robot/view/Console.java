@@ -298,12 +298,12 @@ public static void relaunch(int dim){
 		frame.getContentPane().add(console,BorderLayout.SOUTH);
 		
 		frame.pack();
-		frame.setSize(400, 650);
+		
 	    //Center the window
 		Dimension frameSize = frame.getSize();
 		frame.setResizable(false);
+		frame.setSize(400, 650);
 		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-		
 		
 		if (frameSize.height > screenSize.height) {
 			frameSize.height = screenSize.height;
@@ -311,7 +311,6 @@ public static void relaunch(int dim){
 		if (frameSize.width > screenSize.width) {
 			frameSize.width = screenSize.width;
 		}
-		
 		frame.setLocation((screenSize.width - frameSize.width) / 2, (screenSize.height - frameSize.height) / 2);
 		frame.setVisible(true);
 	 }

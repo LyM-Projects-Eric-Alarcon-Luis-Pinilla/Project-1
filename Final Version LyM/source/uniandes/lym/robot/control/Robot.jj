@@ -1,0 +1,1250 @@
+/*
+Gramatica para el Robot:
+Autor: Alejandro Arango
+Modificado por: Silvia Takahashi
+Modificado por: Juan Pablo Morales.
+Agregadas producciones para manejar globos
+Modificado por Silvia Takahashi
+
+
+ **/
+
+
+options 
+{
+  
+	LOOKAHEAD=1; 
+	IGNORE_CASE=true;
+	STATIC = false;
+	
+}
+   
+
+PARSER_BEGIN(Robot)
+
+package uniandes.lym.robot.control;
+
+import uniandes.lym.robot.kernel.*;
+import uniandes.lym.robot.view.Console;
+ 
+import java.awt.Point;
+import java.io.*;
+import java.util.Vector;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.awt.Point;
+
+import java.util.LinkedList;
+
+@SuppressWarnings("serial")
+public class Robot 
+{
+
+
+	private RobotWorldDec world;
+	private HashMap<String,Integer> hashVariable = new HashMap <String,Integer>();
+	private HashMap<String,Object> hashFunction = new HashMap <String,Object>();
+		
+	void setWorld(RobotWorld w) {
+		world = (RobotWorldDec) w;	
+	}
+
+	void setFace(int numFace){
+	  int currentFace = world.getFacing();
+	  while (currentFace != numFace) {
+		world.turnRight();
+		currentFace = world.getFacing();
+	  }
+    }
+
+	boolean checkBoundaries (String valorVerdad, String direction, int x, int y, int numPasos)
+	{
+		int finalX = 0; int finalY = 0;
+
+		if (direction.equals("right")) {finalX = x + numPasos; finalY = y;}
+		else if (direction.equals("left")) {finalX = x - numPasos; finalY = y;}
+		else if (direction.equals("front")) {finalX = x; finalY = y - numPasos;}
+		else if (direction.equals("back")) {finalX = x; finalY = y + numPasos;};
+
+		if (valorVerdad.equals("1")) {
+		  if ( (x < 1 || x > 8) || (finalX < 1 || finalX > 8) ) {return false;};
+		  if ( (y < 1 || y > 8) || (finalY < 1 || finalY > 8) ) {return false;};
+		  }
+		
+		if (valorVerdad.equals("0")) {
+		  if ( (x >= 1 && x <= 8) || (finalX >= 1 && finalX <= 8) ) {return false;};
+		  if ( (y >= 1 && y <= 8) || (finalY >= 1 && finalY <= 8) ) {return false;};
+		  }
+				
+		return true;
+	}
+
+	boolean checkChoque(String valorVerdad, String direction, int numPasos) {
+	  	int currentFacing = world.getFacing();
+
+	  	if (direction.equals("front")) {setFace(0);};
+	  	if (direction.equals("back")) {setFace(1);};
+	  	if (direction.equals("right")) {setFace(2);};
+		if (direction.equals("left")) {setFace(3);};
+
+		int obstaculo = world.getObstacle();
+		setFace(currentFacing);
+		
+		if (valorVerdad.equals("1")) {
+		  if (numPasos >= obstaculo) {return false;};
+		};
+
+		if (valorVerdad.equals("0")) {
+		  if (numPasos < obstaculo) {return false;};
+		};
+
+		return true;
+	}
+
+	String convertDirection(int facing) {
+		String retorno = "";
+	  
+		if (facing == 0) {retorno = "front";};
+		if (facing == 1) {retorno =  "back";};
+		if (facing == 2) {retorno =  "right";};
+		if (facing == 3) {retorno = "left";};
+
+		return retorno;
+	}
+	  
+	String salida=new String();
+
+	void evaluateHash(String functionName)
+	{
+	  HashMap<String,Object> hashParaCommand = (HashMap<String,Object>) hashFunction.get(functionName);
+	  HashMap<Integer,Object> hashCommand = (HashMap<Integer,Object>) hashParaCommand.get("command");
+	  HashMap<String,String> hashParameter = (HashMap<String,String>) hashParaCommand.get("parameter");
+	  int size = hashCommand.size();
+	  
+	  for (int i = 1; i < (size+1); i++) {
+	    
+	  }
+	      
+	}
+	
+	void evaluarJump(ArrayList<Object> listaJump, boolean condition) {
+	  String oldx = (String) listaJump.get(1);
+	  int x = Integer.parseInt(oldx);
+	  
+	  String oldy = (String) listaJump.get(2);
+	  int y = Integer.parseInt(oldy);
+	
+	  if (condition == true) {world.setPostion(x,y);}
+
+	}
+
+	void evaluarWalk(ArrayList<Object> listaWalk, boolean condition) {
+
+		int size = listaWalk.size();
+		String numeroPasosBeta = (String)listaWalk.get(1);
+		int currentFace =0;
+		int numeroPasos = Integer.parseInt(numeroPasosBeta);
+		if (size == 2) {world.moveForward(numeroPasos,false);} 
+		else if (size == 3) {
+			String orienDir = (String) listaWalk.get(2);
+			System.out.println(orienDir);
+			if (condition == false) {int num = 0;}
+			else if (orienDir.equals("north"))
+			{setFace(0); world.moveForward(numeroPasos,false);}
+			else if (orienDir.equals("south"))
+			{ setFace(1); world.moveForward(numeroPasos,false);}
+			else if (orienDir.equals("east"))
+			{ setFace(2); world.moveForward(numeroPasos,false);}
+			else if (orienDir.equals("west"))
+			{ setFace(3); world.moveForward(numeroPasos,false);}
+			
+			else if (orienDir.equals("front")) {currentFace = world.getFacing();
+			setFace(0); world.moveForward(numeroPasos,false); setFace(currentFace);}
+			else if (orienDir.equals("back")) {currentFace = world.getFacing();
+			setFace(1); world.moveForward(numeroPasos,false); setFace(currentFace);}
+			else if (orienDir.equals("tright")) {currentFace = world.getFacing();
+			setFace(2); world.moveForward(numeroPasos,false); setFace(currentFace);}
+			else if (orienDir.equals("left")) {currentFace = world.getFacing();
+			setFace(3); world.moveForward(numeroPasos,false); setFace(currentFace);}
+
+			}
+	}
+			
+	  void evaluarLeap (ArrayList<Object> listaLeap, boolean condition) {
+
+	  int size = listaLeap.size();
+	  	
+		String numeroPasosBeta = (String)listaLeap.get(1);
+		int currentFace =0;
+		int numeroPasos = Integer.parseInt(numeroPasosBeta);
+		if (size == 2) {world.moveForward(numeroPasos,true);} 
+		else if (size == 3) {
+			String orienDir = (String) listaLeap.get(2);
+			if (condition == false) {int num = 0;}
+			else if (orienDir.equals("north"))
+			{setFace(0); world.moveForward(numeroPasos,true);}
+			else if (orienDir.equals("south"))
+			{ setFace(1); world.moveForward(numeroPasos,true);}
+			else if (orienDir.equals("east"))
+			{ setFace(2); world.moveForward(numeroPasos,true);}
+			else if (orienDir.equals("west"))
+			{ setFace(3); world.moveForward(numeroPasos,true);}
+			
+			else if (orienDir.equals("front")) {currentFace = world.getFacing();
+			setFace(0); world.moveForward(numeroPasos,true); setFace(currentFace);}
+			else if (orienDir.equals("back")) {currentFace = world.getFacing();
+			setFace(1); world.moveForward(numeroPasos,true); setFace(currentFace);}
+			else if (orienDir.equals("tright")) {currentFace = world.getFacing();
+			setFace(2); world.moveForward(numeroPasos,true); setFace(currentFace);}
+			else if (orienDir.equals("left")) {currentFace = world.getFacing();
+			setFace(3); world.moveForward(numeroPasos,true); setFace(currentFace);}
+	  }
+	}
+
+
+	void evaluarTurn(ArrayList<Object> listaTurn, boolean condition) {
+
+	     String direccion = (String) listaTurn.get(1);
+	     if (condition == false) {int numero = 0;}
+	     else if (direccion.equals("tright")) { world.turnRight();}
+	     else if (direccion.equals("left")) {world.turnRight();world.turnRight();world.turnRight();}
+
+	  }
+
+   void evaluarTurnTo(ArrayList<Object> listaTurnTo, boolean condition) { 
+
+	  String orientacion = (String) listaTurnTo.get(1);
+	  if (condition == false) {int numero = 0;}
+	  else if (orientacion.equals("north")) {setFace(0);}
+	  else if (orientacion.equals("south")) {setFace(1);}
+	  else if (orientacion.equals("east")) {setFace(2);}
+	  else if (orientacion.equals("west")) {setFace(3);}
+	}
+
+  void evaluarDrop(ArrayList<Object> listaEvaluar, boolean condition) {
+    String numberBeta = (String) listaEvaluar.get(1);
+    int number = Integer.parseInt(numberBeta);
+    if (condition == true) {world.putChips(number);} 
+    
+  }
+
+  void evaluarGet(ArrayList<Object> listaGet, boolean condition) {
+	String numberBeta = (String) listaGet.get(1);
+    int number = Integer.parseInt(numberBeta);
+	if (condition == true){world.pickChips(number);} 
+    
+  }
+
+  void evaluarGrab (ArrayList<Object> listaGrab, boolean condition) {
+	String numberBeta = (String) listaGrab.get(1);
+    int number = Integer.parseInt(numberBeta);
+    if (condition == true){world.grabBalloons(number);} 
+  }
+
+  void evaluarLetGo(ArrayList<Object> listaLetGo, boolean condition) {
+    String numberBeta = (String) listaLetGo.get(1);
+    int number = Integer.parseInt(numberBeta);
+    if (condition == true) {world.putBalloons(number);}
+
+    
+  } 
+
+  boolean evaluarCondicion (ArrayList<String> listaCondicion ) {
+
+	String valorVerdad = (String) listaCondicion.get(0);
+	String indicador = (String) listaCondicion.get(1);
+	boolean result = true;
+
+
+	if (indicador.equals("jump")) {
+	  int firstNumber = Integer.parseInt(listaCondicion.get(2)); int secondNumber =Integer.parseInt(listaCondicion.get(3));
+	  
+	  if ( ((firstNumber > 8 || firstNumber < 1) || (secondNumber > 8 || secondNumber < 1)) && valorVerdad.equals("1"))
+	  	   {return false;}
+	   else if ((firstNumber <= 8 && firstNumber >= 1) || (secondNumber <= 8 && secondNumber >=1) && valorVerdad.equals("0"))
+	   		{return false;}
+	}
+
+	else if (indicador.equals("walk")) {
+	  String betaFirstNumber = (String) listaCondicion.get(2);
+	  int firstNumber = Integer.parseInt(betaFirstNumber);
+	  String posibleDirection = (String) listaCondicion.get(3);
+	  String newDirection = "front";
+	  
+	  if (posibleDirection.equals("north")) {newDirection = "front";}
+	  else if (posibleDirection.equals("south")) {newDirection = "back";}
+	  else if (posibleDirection.equals("east")) {newDirection = "right";}
+	  else if (posibleDirection.equals("west")) { newDirection = "left";}
+	  else if (posibleDirection.equals("front")) {newDirection = "front";}
+	  else if (posibleDirection.equals("back")) { newDirection = "back";}
+	  else if (posibleDirection.equals("tright")) { newDirection = "right";}
+	  else if (posibleDirection.equals("left")) { newDirection = "left";}
+	  
+	  Point actualPosition = world.getPosition();
+	  int x = (int) actualPosition.getX(); int y = (int) actualPosition.getY(); 
+	  result = checkBoundaries(valorVerdad,newDirection,x,y,firstNumber);
+	  if (result == false) {return false;};
+	  result = checkChoque(valorVerdad,newDirection,firstNumber);
+	  if (result == false) {return false;};
+	  }
+
+	 else if (indicador.equals("leap")) {
+	  String betaFirstNumber = (String) listaCondicion.get(2);
+	  int firstNumber = Integer.parseInt(betaFirstNumber);
+	  String posibleDirection = (String) listaCondicion.get(3);
+	  String newDirection = "front";
+	  if (posibleDirection.equals("north")) {newDirection = "front";}
+	  if (posibleDirection.equals("south")) {newDirection = "back";}
+	  if (posibleDirection.equals("east")) {newDirection = "right";}
+	  if (posibleDirection.equals("west")) {newDirection = "left";}
+	  if (posibleDirection.equals("front")) {newDirection = "front";}
+	  if (posibleDirection.equals("back")) {newDirection = "back";}
+	  if (posibleDirection.equals("tright")) {newDirection = "right";}
+	  if (posibleDirection.equals("left")) {newDirection = "left";}
+	  
+	  Point actualPosition = world.getPosition();
+	  int x = (int) actualPosition.getX(); int y = (int) actualPosition.getY(); 
+	  result = checkBoundaries(valorVerdad,newDirection,x,y,firstNumber);
+	  if (result == false) {return false;};
+	 }
+
+	 else if (indicador.equals("turn")) {
+		if (valorVerdad.equals("0")) {return false;}
+	 }
+		else if (indicador.equals("turnto")) {
+		if (valorVerdad.equals("0")) {return false;} }
+	else if (indicador.equals("drop")) {
+		if (valorVerdad.equals("0")) {return false;} }
+	else if (indicador.equals("get")) {
+		if (valorVerdad.equals("0")) {return false;} }
+	else if (indicador.equals("grab")) {
+		if (valorVerdad.equals("0")) {return false;} }
+	else if (indicador.equals("letGo")) {
+		if (valorVerdad.equals("0")) {return false;} }
+
+    return true;
+	}
+  
+  
+  void evaluarIf(ArrayList<Object> listaIf) {
+
+	int size = listaIf.size();
+	
+	for (int i = 0; i < size; i++) {
+	   ArrayList<String> listaCondicion = (ArrayList<String>) listaIf.get(1);
+	   String indicador = (String) listaCondicion.get(1);
+	   boolean condicion = (boolean) evaluarCondicion(listaCondicion);
+
+	   if (condicion == true) {
+	     HashMap<Integer,Object> mapaIfInterno = (HashMap<Integer,Object>) listaIf.get(2);
+	     int sizeMapa = (int) mapaIfInterno.size();
+	     for (int z = 1; z < sizeMapa+1; i++ ) {
+	       ArrayList<Object> listaActual = (ArrayList<Object>) mapaIfInterno.get(z);
+	       String nombre = (String) listaActual.get(0);
+	       evaluarGeneral(nombre, listaActual ,true);
+	     }
+	   }
+	   else if (condicion == false) {
+	     HashMap<Integer,Object> mapaElseInterno = (HashMap<Integer,Object>) listaIf.get(3);
+	     int sizeMapa = (int) mapaElseInterno.size();
+	     for (int a = 1; a < sizeMapa+1; i++ ) {
+	       ArrayList<Object> listaActual = (ArrayList<Object>) mapaElseInterno.get(a);
+	       String nombre = (String) listaActual.get(0);
+	       evaluarGeneral(nombre, listaActual ,true); }
+	     }
+	}
+  }
+
+  void evaluarGeneral (String indicador,ArrayList<Object> listaIf, boolean condicion) {
+    if (indicador.equals("jump")) {evaluarJump(listaIf,condicion);}
+    else if (indicador.equals("walk")) {evaluarWalk(listaIf,condicion);}
+    else if (indicador.equals("leap")) {evaluarLeap(listaIf,condicion);}
+    else if (indicador.equals("turn")) {evaluarTurn(listaIf,condicion);}
+    else if (indicador.equals("turnto")) {evaluarTurnTo(listaIf,condicion);}
+    else if (indicador.equals("drop")) {evaluarDrop(listaIf,condicion);}
+    else if (indicador.equals("get")) {evaluarGet(listaIf,condicion);}
+    else if (indicador.equals("grab")) {evaluarGrab(listaIf,condicion);}
+    else if (indicador.equals("letgo")) {evaluarLetGo(listaIf,condicion);}
+  }
+ 
+
+  
+
+  void evaluateProcCommand(HashMap<Integer,Object> hashCommand,
+							HashMap<String,String> hashParameter,
+							String functionName)
+	{
+	  	int size = hashCommand.size();
+		for (int i = 1; i<size+1;i++) {
+		  ArrayList<Object> listaActual = (ArrayList<Object>) hashCommand.get(i);
+		  String nombre = (String) listaActual.get(0);
+
+		  if (nombre.equals("jump"))
+		  {String parameter = (String) listaActual.get(1);
+		   if (hashParameter.containsKey(parameter)) {
+		     String newParameter = (String) hashParameter.get(parameter);
+		     if(newParameter.equals("no value")) {listaActual.remove(1);listaActual.add(1,newParameter);};}
+		     ;
+		   parameter = (String) listaActual.get(2);
+		   if (hashParameter.containsKey(parameter)) {
+		     String newParameter = (String) hashParameter.get(parameter);
+		     if(newParameter.equals("no value")) {listaActual.remove(2);listaActual.add(2,newParameter);};}
+		     ;}
+
+		  else if (nombre.equals("walk")) {int num = 0;}
+	}
+}
+}
+
+PARSER_END(Robot)
+
+SKIP:
+{
+	    " "
+	|	"\r"
+	|	"\t"
+	|   "\n"
+}
+
+TOKEN: /* Nombres de Comandos */
+{
+
+			<MOV:  "Mov">
+		| 	<RIGHT: "RIGHT">
+		| 	<PUT: "Put">
+		| 	<PICK: "Pick">
+		|  < POP: "Pop" >
+		|  <GO: "GO" >
+        |  < HOP:  "HOP" >		
+
+}
+
+TOKEN:
+{
+		<BALLOONS:  "BALLOONS" >
+		|	<CHIPS:     "CHIPS"  >
+		| <tRIGHT: "tright" >
+		| <LEFT : "left" >
+		| <FRONT: "front" >
+		| <BACK: "back" >
+		| <NORTH : "north" >
+		| <SOUTH : "south" >
+		| <EAST: "east" >
+		| <WEST: "west" >
+		
+		
+
+}
+
+TOKEN:
+{
+	< JUMP:"jump">
+	| 	< WALK: "walk" >
+	| < LEAP: "leap" >
+	| < TURN: "turn" >
+	| < TURNTO: "turnto" >
+	| < DROP: "drop" >
+	| < GET: "get" >
+	| < GRAB: "grab" >
+	| < LETGO: "letGo" >
+	| < NOP: "nop" >
+	| < NOT: "not" >
+	| < DEFVAR: "defvar" >
+	| < DEFPROC: "defproc" >
+	| < IF: "if" >
+	| < ELSE:"else" >
+	| < WHILE: "while" >
+	| <FACING : "facing" >
+	| <CAN: "can" >
+	| <REPEAT: "repeat" >
+	| <TIMES: "times" >
+		
+}
+
+TOKEN :
+{
+		   <NUM: <DIGIT>(<DIGIT>)* >
+		|  <#DIGIT: ["0"-"9"] >
+		|  <#LETTER: ["A"-"Z"] >
+		|  <NAME: <LETTER> (<LETTER>|<NUM>)* >
+
+        
+}
+
+
+
+	//boolean command(uniandes.lym.robot.view.Console sistema) :
+	//STARTING FUNCTION
+	boolean command(Console sistema):
+	{	
+		boolean correct = true;	
+	}
+	
+	{
+	  	  (correct = compilerOptions()| <EOF> {return false;})
+	  	  {try {Thread.sleep(900);}
+	  	   catch (InterruptedException e) {
+	       System.err.format("IOException: %s%n", e);}
+	       System.out.println(hashFunction);
+	       return correct;}
+	}
+
+ 	//GENERAL STRUCTURE
+
+	boolean compilerOptions(): {boolean correct = true;}
+	{
+	(variableDefinition()| correct = executableCommand(true)|correct = procedureDefinition())
+	{return correct;}
+    }
+
+	//VARIABLE DEFINITION AND STORAGE
+	
+    void variableDefinition(): {int value; String variableName;}
+	{
+		<DEFVAR> variableName = nombre() value = num() {hashVariable.put(variableName,value);}
+	}
+
+	boolean isVariableDefined(HashMap<String,Object> hashParameter, ArrayList<Object> listaCommand):{}
+	{
+	  <NAME>  
+	{ if (hashVariable.containsKey(token.image)) {listaCommand.add(token.image);return true;}
+	  else if (hashParameter.containsKey(token.image)){listaCommand.add(token.image); return true;}
+	  else {return false;} }
+	}
+	//PROCEDURE DEFINITION AND STORAGE
+
+	boolean procedureDefinition(): {String procedureName; boolean result = true;}
+	{
+		<DEFPROC> procedureName = nombre()
+		
+		{ HashMap<String,Object> hashParamCommand = new HashMap<String,Object>();
+		 HashMap<String,Object> hashParameter = new HashMap<String,Object>();
+		 HashMap<Integer,Object> hashCommand = new HashMap <Integer,Object>();
+		 hashParamCommand.put("parameter",hashParameter);
+		 hashParamCommand.put("command",hashCommand);
+		 int counter = 1;
+
+		 hashFunction.put(procedureName,hashParamCommand);
+		 
+		 }
+		
+		"(" ( (procParameter(hashParameter)("," procParameter(hashParameter))* ) )? ")"
+
+		"{" (result = storeCommand(procedureName,counter) {if (result == false) {return false;};counter +=1;} )
+		
+		(";"(result = storeCommand(procedureName,counter){if (result == false) {return false;};counter +=1;}))* "}"
+		
+		 
+		
+		 {return result;}
+		
+	}
+
+
+	//STORAGE OF COMMANDS OF A PROCEDURE
+
+	boolean storeCommand(String procedureName, int counter):
+	{
+	  boolean result = true;
+	  HashMap<String,Object> hashParaCom =(HashMap<String,Object>) hashFunction.get(procedureName);
+      HashMap<Integer,Object> hashCommand =(HashMap<Integer,Object>) hashParaCom.get("command");
+      ArrayList<Object> listaVacia = new ArrayList<Object>();
+	}
+	{
+		( result = storeSimpleCommand(procedureName,counter,hashCommand,listaVacia,false)
+	    | result = ifCommand(procedureName,counter,hashCommand)
+	    | result = whileCommand(procedureName,counter,hashCommand)
+	    | result = repeatCommand(procedureName,counter,hashCommand))
+
+	    {return result;}
+	
+	}
+	
+	boolean storeCommandInterno(String procedureName, int counter,
+								HashMap<Integer,Object> hashInterno):
+	{
+	  boolean result = true;
+	  ArrayList<Object> listaVacia = new ArrayList<Object>();
+	}
+	{ 	
+		( result = storeSimpleCommand(procedureName, counter, hashInterno,listaVacia,false)
+		| result = ifCommand(procedureName, counter, hashInterno)
+		| result = whileCommand(procedureName, counter, hashInterno)
+		| result = repeatCommand(procedureName,counter,hashInterno))
+
+		{return result;}
+	}
+	
+	boolean storeSimpleCommand(String procedureName,int counter,
+	                           HashMap<Integer,Object> hashCommand,
+	                           ArrayList<Object> listaCommand,
+	                           boolean condition):
+	{
+	  boolean result = true;
+	}
+	
+	{  (
+	  
+	    <NAME> {listaCommand.add(token.image);} "=" {listaCommand.add("=");}
+	    <NUM> {listaCommand.add(token.image);hashCommand.put(counter,listaCommand);}
+
+	   | <JUMP> {listaCommand.add("jump"); }
+				"(" result = possibleProcParameter(procedureName,listaCommand)
+		        {if (result == false) {return false;}}
+			    "," result = possibleProcParameter(procedureName,listaCommand)
+			    {if (result == false) {return false;}} ")"
+				{if (condition == false) {hashCommand.put(counter,listaCommand);}}
+
+	  | (<WALK> {listaCommand.add(token.image);} | <LEAP> {listaCommand.add(token.image);})"("
+	  	 result = possibleProcParameter(procedureName,listaCommand)
+	  	 {if (result == false) {return false;}}
+	  	 ("," (orientation() {listaCommand.add(token.image);}
+	  	       |direction() {listaCommand.add(token.image);}))? ")"
+	  	       
+	  	       {if (condition == false) {hashCommand.put(counter,listaCommand);}}
+
+	  | <TURN>  {listaCommand.add(token.image);} "("
+	   direction() {listaCommand.add(token.image);} ")"
+	   {if (condition == false) {hashCommand.put(counter,listaCommand);}}
+
+	  | <TURNTO> {listaCommand.add(token.image);} "("
+	    orientation() {listaCommand.add(token.image);} ")"
+	    {if (condition == false) {hashCommand.put(counter,listaCommand);}}
+
+	 |	(<DROP> {listaCommand.add(token.image);} |
+	 	 <GET> {listaCommand.add(token.image);} |
+	 	 <GRAB> {listaCommand.add(token.image);} |
+	 	 <LETGO> {listaCommand.add(token.image);} )
+	 	 "(" result = possibleProcParameter(procedureName,listaCommand)
+	  	 	{if (result == false) {return false;}} ")"
+	  	 {if (condition == false) {hashCommand.put(counter,listaCommand);}}
+
+	| <NOP> {listaCommand.add(token.image);} "(" ")"
+	  {if (condition == false) {hashCommand.put(counter,listaCommand);}}
+
+
+	 )	   	
+		{return result;}
+
+	}
+
+	boolean ifCommand(String procedureName, int counter, HashMap<Integer,Object> hashCommand):
+	{
+	  ArrayList<Object> listaCommand = new ArrayList<Object>();
+	  HashMap<Integer,Object> hashInternoIf = new HashMap<Integer,Object>();
+	  HashMap<Integer,Object> hashInternoElse = new HashMap<Integer,Object>();
+	  boolean result = true;
+	  int counterInterno = 1;
+	}
+	{
+		<IF> {listaCommand.add(token.image);} 
+		 result = conditionCommand(procedureName,counter,listaCommand)
+		"{"
+		 (result = storeCommandInterno(procedureName, counterInterno, hashInternoIf)
+		  {counterInterno += 1; if (result == false) {return false;}})+ "}"
+		  {listaCommand.add(hashInternoIf);}
+			
+		<ELSE> 
+		"{" {counterInterno = 1;}
+		 (result = storeCommandInterno(procedureName, counterInterno, hashInternoElse)
+		  {counterInterno += 1; if (result == false) {return false;}})+
+		  {listaCommand.add(hashInternoElse);}"}"
+		 
+			
+		 { hashCommand.put(counter,listaCommand);
+		   if (result == false) {return false;} else {return result;}}
+	}
+
+	boolean conditionCommand(String procedureName, int counter, ArrayList<Object> listaCommand):
+	{
+	  
+	  ArrayList<Object> listCondition = new ArrayList<Object> ();
+	  HashMap<Integer,Object> hashInternoIf = new HashMap<Integer,Object>();
+	  String counterVerdad = "1";
+	  boolean result = true;
+	}
+	{
+		( (<NOT> { if(counterVerdad.equals("0")) {counterVerdad = "1";}
+				   else if (counterVerdad.equals("1")) {counterVerdad = "0";} })*
+				   {listCondition.add(counterVerdad);}
+		
+		(<CAN > {listCondition.add(token.image);}"("
+		{result = storeSimpleCommand(procedureName,counter,hashInternoIf,listCondition,true);}")"
+		
+		|<FACING> {listCondition.add(token.image);}"(" orientation() {listCondition.add(token.image);}")"
+		)
+
+		) 
+		
+        {listaCommand.add(listCondition);
+          if (result == false) {return false;} else {return result;}}
+	}
+
+	boolean whileCommand(String procedureName, int counter, HashMap<Integer,Object> hashCommand):
+	{
+	  ArrayList<Object> listaCommand = new ArrayList<Object>();
+	  HashMap<Integer,Object> hashInternoWhile = new HashMap<Integer,Object>();
+	  int counterInterno = 1;
+	  boolean result = true;
+	}
+	{
+		<WHILE> {listaCommand.add(token.image);} 
+		result = conditionCommand(procedureName,counter,listaCommand)
+		{if (result == false) {return false;}}
+
+		"{"
+		 (result = storeCommandInterno(procedureName, counterInterno, hashInternoWhile)
+		  {counterInterno += 1; if (result == false) {return false;}})+ "}"
+		  {listaCommand.add(hashInternoWhile);}
+
+		 { hashCommand.put(counter,listaCommand);
+		   if (result == false) {return false;} else {return result;}}
+		
+	}
+
+	boolean repeatCommand(String procedureName, int counter, HashMap<Integer,Object> hashCommand):
+	{
+	  ArrayList<Object> listaCommand = new ArrayList<Object>();
+	  HashMap<Integer,Object> hashInternoRepeat = new HashMap<Integer,Object>();
+	  int counterInterno = 1;
+	  boolean result = true;
+	}
+	{
+		<REPEAT> {listaCommand.add(token.image);}
+		<NUM> {listaCommand.add(token.image); } <TIMES>
+
+		"{"
+		 (result = storeCommandInterno(procedureName, counterInterno, hashInternoRepeat)
+		  {counterInterno += 1; if (result == false) {return false;}})+ "}"
+		  {listaCommand.add(hashInternoRepeat);}
+
+		{ hashCommand.put(counter,listaCommand);
+		   if (result == false) {return false;} else {return result;}}
+	}
+
+
+	//EXECUTION FOR THE FUNCTIONS
+
+	boolean executableFunction():
+	{
+
+	}
+	{
+		<NAME> {return true; }
+	}
+
+	
+
+	
+	//EXECUTION METHODS
+
+	boolean checkCondition():
+	{
+	 String counterVerdad = "1";
+	 boolean result = true;
+    }
+	{
+		( (<NOT> { if(counterVerdad.equals("0")) {counterVerdad = "1";}
+				   else if (counterVerdad.equals("1")) {counterVerdad = "0";} })* 
+		
+		(<CAN > "(" result = checkCan(counterVerdad) ")" |<FACING> "(" result = checkFacing(counterVerdad) ")"))
+
+		{return result;} 
+	}
+	
+	boolean checkCan(String valorVerdad):
+	{
+		int firstNumber;
+		int secondNumber;
+		boolean result = true;
+	}
+	{
+	  (	    
+	  <JUMP> "(" firstNumber = num() "," secondNumber = num() ")"
+	  {if ( ((firstNumber > 8 || firstNumber < 1) || (secondNumber > 8 || secondNumber < 1)) && valorVerdad.equals("1"))
+	  	   {return false;}
+	   else if ((firstNumber <= 8 && firstNumber >= 1) || (secondNumber <= 8 && secondNumber >=1) && valorVerdad.equals("0"))
+	   		{return false;}}
+
+	| <WALK> "(" firstNumber = num() {String newDirection = convertDirection(world.getFacing());}
+				(","(newDirection = convertOrientationToDirection()|
+				 newDirection = getDirection() 
+                ))? ")"
+
+	{ Point actualPosition = world.getPosition();
+	  int x = (int) actualPosition.getX(); int y = (int) actualPosition.getY(); 
+	  result = checkBoundaries(valorVerdad,newDirection,x,y,firstNumber);
+	  if (result == false) {return false;};
+	  result = checkChoque(valorVerdad,newDirection,firstNumber);
+	  if (result == false) {return false;};
+	  }
+
+
+	|<LEAP> "(" firstNumber = num() {String newDirection = convertDirection(world.getFacing());}
+				(","(newDirection = convertOrientationToDirection()|
+				 newDirection = getDirection() 
+                ))? ")"
+
+	{ Point actualPosition = world.getPosition();
+	  int x = (int) actualPosition.getX(); int y = (int) actualPosition.getY(); 
+	  result = checkBoundaries(valorVerdad,newDirection,x,y,firstNumber);
+	  if (result == false) {return false;};
+	  }
+
+	| <TURN> "(" direction() ")" {if (valorVerdad.equals("0")) {return false;} }
+	| <TURNTO> "(" orientation() ")" {if (valorVerdad.equals("0")) {return false;} }
+	| <DROP> "(" <NUM> ")" {if (valorVerdad.equals("0")) {return false;} }
+	| <GET> "(" <NUM> ")" {if (valorVerdad.equals("0")) {return false;} }
+	| <GRAB> "(" <NUM> ")" {if (valorVerdad.equals("0")) {return false;} }
+	| <LETGO> "(" <NUM> ")" {if (valorVerdad.equals("0")) {return false;} }
+	| <NOP> "(" <NUM> ")" {if (valorVerdad.equals("0")) {return false;} }
+	  
+	  )
+	{return result;}
+	}
+
+
+	
+	String convertOrientationToDirection(): {}
+	{
+		<NORTH> {return "front";}
+	|   <SOUTH> {return "back";}
+	|   <EAST> {return "right";}
+	|   <WEST> {return "left";}
+	 
+	}
+
+	String getDirection(): {}
+	{
+		<tRIGHT> {return "right";}
+	|	 <LEFT > {return "left";}
+	|    <FRONT> {return "front";}
+	|    <BACK>  {return "back";}
+	}	
+	
+	boolean checkFacing(String valorVerdad):
+	{
+	  int actualFacing = world.getFacing();
+	  boolean result = true;
+	}
+	{
+	  (	    
+	  <NORTH> {if (valorVerdad.equals("0") && actualFacing == 0) {return false;}
+	  		  else if (valorVerdad.equals("1") && actualFacing != 0) {return false;}}
+	| <SOUTH> {if (valorVerdad.equals("0") && actualFacing == 1) {return false;}
+			   else if (valorVerdad.equals("1") && actualFacing != 1) {return false;}} 
+	| <EAST>  {if (valorVerdad.equals("0") && actualFacing == 2) {return false;}
+	           else if (valorVerdad.equals("1") && actualFacing != 2) {return false;}} 
+	| <WEST>  {if (valorVerdad.equals("0") && actualFacing == 3) {return false;}
+	           else if (valorVerdad.equals("1") && actualFacing != 3) {return false;}} 
+	)
+	{return result;}
+	}
+	
+	boolean executeIfCommand(): {
+
+	 boolean condition;
+	 boolean result = true;
+	}
+	{
+	 <IF> "(" condition = checkCondition() ")"
+	 executableCommand(condition)
+	 {if (condition == true) {condition = false;}
+	 else if (condition == false) {condition = true;}}
+	 <ELSE> executableCommand(condition)
+	 {return true;}
+	}
+
+	boolean executeWhileCommand(): {
+	  boolean condition;
+	  ArrayList<String> listaCondition = new ArrayList<String>();
+	  HashMap<Integer,Object> hashComandos = new HashMap<Integer,Object>();
+	}
+	{
+	  	
+		<WHILE> condition = checkWhileCondition(listaCondition) "{" guardarLoop(hashComandos) "}"
+		{ while(condition == true){
+				int sizeHash = hashComandos.size();
+				for (int a = 1; a < sizeHash+1; a++) {
+				  ArrayList<Object> listaActual = (ArrayList<Object>) hashComandos.get(a);
+				  String indicador = (String) listaActual.get(0);
+				  evaluarGeneral(indicador,listaActual,true);
+				  try {Thread.sleep(1000);}
+		 		  catch (InterruptedException e) {System.err.format("IOException: %s%n", e);}
+				}
+		        condition = evaluarCondicion(listaCondition);} } 
+		        
+		{return true;}
+	}
+	//(executableCommand(true))+
+	
+
+	void guardarLoop(HashMap<Integer,Object> hashComandos): {boolean result;int counter = 1;}
+	{
+	  	
+		( result = storeCommandInterno("function",counter, hashComandos) {counter += 1;})
+	   (";" result = storeCommandInterno("function",counter, hashComandos) {counter += 1;})*
+	}
+	
+
+	boolean checkWhileCondition(ArrayList<String> listaCondition): 
+	{
+	 String counterVerdad = "1";
+	 boolean result = true;
+    }
+	{
+		( (<NOT> { if(counterVerdad.equals("0")) {counterVerdad = "1";}
+				   else if (counterVerdad.equals("1")) {counterVerdad = "0";} })* 
+
+		{listaCondition.add(counterVerdad);}
+		
+		(<CAN > "(" result = checkWhileCan(counterVerdad,listaCondition) ")" {listaCondition.add(token.image);}
+		|<FACING> "(" result = checkWhileFacing(counterVerdad, listaCondition) ")" {listaCondition.add(token.image);}
+		))
+
+		{return result;} 
+	}
+
+	boolean checkWhileCan(String valorVerdad, ArrayList<String> listaCondition):
+	{
+		int firstNumber;
+		int secondNumber;
+		boolean result = true;
+	}
+	{
+	  (
+	    
+	  <JUMP> {listaCondition.add(token.image);}"(" firstNumber = num() {listaCondition.add(("" + firstNumber));}"," secondNumber = num() {listaCondition.add("" + secondNumber);} ")"
+	  {if ( ((firstNumber > 8 || firstNumber < 1) || (secondNumber > 8 || secondNumber < 1)) && valorVerdad.equals("1"))
+	  	   {return false;}
+	   else if ((firstNumber <= 8 && firstNumber >= 1) || (secondNumber <= 8 && secondNumber >=1) && valorVerdad.equals("0"))
+	   		{return false;}}
+
+	| <WALK> {listaCondition.add(token.image);}"(" firstNumber = num(){listaCondition.add(""+firstNumber);} {String newDirection = convertDirection(world.getFacing());}
+				(","(newDirection = convertOrientationToDirection() {listaCondition.add(newDirection);}|
+				 newDirection = getDirection() {listaCondition.add(newDirection);}
+                ))? ")"
+
+	{ Point actualPosition = world.getPosition();
+	  int x = (int) actualPosition.getX(); int y = (int) actualPosition.getY(); 
+	  result = checkBoundaries(valorVerdad,newDirection,x,y,firstNumber);
+	  if (result == false) {return false;};
+	  result = checkChoque(valorVerdad,newDirection,firstNumber);
+	  if (result == false) {return false;};
+	  }
+
+
+	|<LEAP> {listaCondition.add(token.image);}"(" firstNumber = num() {listaCondition.add(""+ firstNumber);} {String newDirection = convertDirection(world.getFacing());}
+				(","(newDirection = convertOrientationToDirection(){listaCondition.add(newDirection);}
+				|
+				 newDirection = getDirection() {listaCondition.add(newDirection);}
+                ))? ")"
+
+	{ Point actualPosition = world.getPosition();
+	  int x = (int) actualPosition.getX(); int y = (int) actualPosition.getY(); 
+	  result = checkBoundaries(valorVerdad,newDirection,x,y,firstNumber);
+	  if (result == false) {return false;};
+	  }
+
+	| <TURN>{listaCondition.add(token.image);} "(" direction() {listaCondition.add(token.image);}")" {if (valorVerdad.equals("0")) {return false;} }
+	| <TURNTO>{listaCondition.add(token.image);} "(" orientation() {listaCondition.add(token.image);} ")" {if (valorVerdad.equals("0")) {return false;} }
+	| <DROP> {listaCondition.add(token.image);}"(" <NUM> {listaCondition.add(token.image);} ")" {if (valorVerdad.equals("0")) {return false;} }
+	| <GET>{listaCondition.add(token.image);} "(" <NUM> {listaCondition.add(token.image);}")" {if (valorVerdad.equals("0")) {return false;} }
+	| <GRAB> {listaCondition.add(token.image);}"(" <NUM> {listaCondition.add(token.image);}")" {if (valorVerdad.equals("0")) {return false;} }
+	| <LETGO> {listaCondition.add(token.image);}"(" <NUM> {listaCondition.add(token.image);}")" {if (valorVerdad.equals("0")) {return false;} }
+	| <NOP> {listaCondition.add(token.image);}"(" <NUM> {listaCondition.add(token.image);}")" {if (valorVerdad.equals("0")) {return false;} }
+	  
+	  )
+	{return result;}
+	}
+
+	boolean checkWhileFacing(String valorVerdad, ArrayList<String> listaCondition):
+	{
+	  int actualFacing = world.getFacing();
+	  boolean result = true;
+	}
+	{
+	  (
+	    
+	  <NORTH> {listaCondition.add(token.image);}{if (valorVerdad.equals("0") && actualFacing == 0) {return false;}
+	  		  else if (valorVerdad.equals("1") && actualFacing != 0) {return false;}}
+	| <SOUTH> {listaCondition.add(token.image);}{if (valorVerdad.equals("0") && actualFacing == 1) {return false;}
+			   else if (valorVerdad.equals("1") && actualFacing != 1) {return false;}} 
+	| <EAST>  {listaCondition.add(token.image);}{if (valorVerdad.equals("0") && actualFacing == 2) {return false;}
+	           else if (valorVerdad.equals("1") && actualFacing != 2) {return false;}} 
+	| <WEST>  {listaCondition.add(token.image);}{if (valorVerdad.equals("0") && actualFacing == 3) {return false;}
+	           else if (valorVerdad.equals("1") && actualFacing != 3) {return false;}} 
+	)
+	{return result;}
+	}
+
+	void executeRepeatCommand(): {int veces = 1; int counter = 0;
+	HashMap<Integer,Object> hashComandos = new HashMap<Integer,Object>();}
+	{
+		<REPEAT> veces = num() <TIMES> "{" guardarLoop(hashComandos) "}"
+		{while (counter < veces) 
+				{int sizeHash = hashComandos.size();
+				for (int a = 1; a < sizeHash+1; a++) {
+				  ArrayList<Object> listaActual = (ArrayList<Object>) hashComandos.get(a);
+				  String indicador = (String) listaActual.get(0);
+				  evaluarGeneral(indicador,listaActual,true);
+				  try {Thread.sleep(1000);}
+		 		  catch (InterruptedException e) {System.err.format("IOException: %s%n", e);}
+				}  counter +=1 ; System.out.println(counter); System.out.println(veces); }
+				 } 
+	}
+
+	
+	boolean executableCommand(boolean condition):{}
+	{
+	   (	     "{" (executeSimpleCommand(condition)|executeIfCommand()|executeWhileCommand()|executeRepeatCommand())
+	         (";"(executeSimpleCommand(condition)|executeIfCommand()|executeWhileCommand()|executeRepeatCommand()) )* "}" )
+
+	     {return true;}
+	   
+	}
+
+
+	boolean executeSimpleCommand(boolean condition): {int numParameterX;
+									 int numParameterY;
+									 String face = "";
+				 					 int variableFace = 5;}
+	{ 
+		(		  <JUMP> "(" numParameterX = getNumericParameter() ","
+				   numParameterY = getNumericParameter() ")"
+				   {if (condition == true) {world.setPostion(numParameterX,numParameterY);}}
+
+		| <WALK> "(" numParameterX = getNumericParameter()
+					{int currentFace = world.getFacing();}
+					("," ( walkByDirection(condition) {face = "original";} |changeOrientation(condition)) )? ")"
+					{if (condition == true)
+					{world.moveForward(numParameterX,false);
+					 if (face.equals("original")) {setFace(currentFace);}} }
+		
+
+		| <LEAP> "(" numParameterX = getNumericParameter()
+					{int currentFace = world.getFacing();}
+					("," ( walkByDirection(condition) {face = "original";} |changeOrientation(condition)) )? ")"
+					{if (condition == true)
+					{world.moveForward(numParameterX,true);
+					 if (face.equals("original")) {setFace(currentFace);}} }
+					 
+		| <TURN> "(" turnLogic(condition)")"
+
+		| <TURNTO> "(" changeOrientation(condition) ")"
+
+        | <DROP>  "(" drop(condition) ")"
+
+      	| <GET> "(" get(condition) ")"
+
+     	| <GRAB>  "(" grab(condition) ")"
+         
+        | <LETGO> "(" putBalloon(condition) ")"
+
+        | <NOP> "(" ")"
+
+		)
+		{try {Thread.sleep(1000);}
+		 catch (InterruptedException e) {System.err.format("IOException: %s%n", e);}	
+		 return true;}
+	}
+	
+
+	
+
+	/**
+	 * Unsigned decimal number
+	 * @return the corresponding value of the string
+	 * @error  corresponding value is too large
+	 */
+
+	
+
+	void orientation(): { }
+	{
+		(<NORTH>|<SOUTH>|<WEST>|<EAST>)
+	}
+
+	void direction(): { }
+	{
+	  (<tRIGHT>|<LEFT>|<FRONT>|<BACK>)    
+	}
+
+	int num() throws Error:
+	{	
+		int total=1;
+	}
+	{
+		<NUM>
+		{
+			try 
+			{
+				total = Integer.parseInt(token.image);
+			} 
+			catch (NumberFormatException ee) 
+			{
+				throw new Error("Number out of bounds: "+token.image+" !!");
+			}
+			return total;
+		}
+	}
+
+	String nombre() throws Error:
+	{	
+		String mensaje = "";
+	}
+	{
+		<NAME>
+		{
+			try
+			{
+				mensaje = token.image;
+			}
+			catch (Exception e)
+			{
+				throw new Error("Name for declaration not recognized: "+ token.image+" !!");
+			}
+			return mensaje;
+		}
+	}
+
+	//PARAMETER FUNCTIONS
+
+	void procParameter(HashMap<String,Object> hashParameter): {String nombreParametro = "";}
+	{
+	 <NAME> {
+	 		
+	 		 try { nombreParametro = token.image;}
+	 		 catch (Exception e) { throw new Error ("Name for parameter not recognized: "+ token.image +" !!"); }
+	 		 hashParameter.put(nombreParametro, "no value");
+	 	}
+	 		
+	}
+
+	boolean possibleProcParameter(String procedureName,ArrayList<Object> listaCommand):
+	{
+	  boolean result = true;
+	  HashMap<String,Object> hashParaCom =(HashMap<String,Object>) hashFunction.get(procedureName);
+      HashMap<String,Object> hashParameter =(HashMap<String,Object>) hashParaCom.get("parameter");
+    }
+	{
+     (
+      <NUM> {listaCommand.add(token.image);}
+     | result = isVariableDefined(hashParameter,listaCommand)
+     {if (result == false) {return false;}} )
+
+	 {return result;}
+    }
+
+	int getNumericParameter(): {int returnNumber;}
+	{	
+		(returnNumber = num()|
+
+		<NAME> {try {returnNumber = hashVariable.get(token.image);}
+				catch (Exception e) {throw new Error("parametro no reconocido: " + token.image + " !!");}
+				} )
+		{return returnNumber;}
+	}	 
+	
+	//FUNCTIONS FOR EXECUTIONS
+
+	int directionToOrientation():{}
+	{
+		(		  <FRONT> {return 0;} |
+		  <BACK> {return 1;} |
+		  <RIGHT> {return 2;} |
+		  <LEFT> {return 3;} ) 
+	}
+
+	void walkByDirection(boolean condition): {}
+	{
+	   <FRONT> {if (condition == true){setFace(0);} }
+	 | <BACK > {if (condition == true){setFace(1);} }
+	 | <tRIGHT> {if (condition == true){setFace(2);} }
+	 | <LEFT>  {if (condition == true){setFace(3);} }
+	}
+
+	void changeOrientation(boolean condition): {}
+	{
+	  <NORTH> { if (condition == true){setFace(0);} }
+	| <SOUTH>  { if (condition == true){setFace(1);} }
+	| <EAST>   { if (condition == true){setFace(2);} }
+	| <WEST>   { if (condition == true){setFace(3);} }
+
+
+	}
+
+	void turnLogic(boolean condition): { }
+	{
+		<tRIGHT> { if (condition == true){world.turnRight();} }
+	| <LEFT> { if (condition == true){world.turnRight();
+				 world.turnRight();
+				 world.turnRight();} }
+		
+	}
+
+	void drop(boolean condition): {
+	  int number = 1;
+	}
+	{
+	  number = num() { if (condition == true) {world.putChips(number);} }
+	}
+
+	void get(boolean condition): {
+	  int number = 1;
+	}
+
+	{
+	  number = num() { if (condition == true){world.pickChips(number);} }
+	}
+
+	void grab(boolean condition): {
+	  int number = 1;
+	}
+	{
+	  number = num() {if (condition == true){world.grabBalloons(number);} }
+	}
+
+
+	
+	void putBalloon(boolean condition): {
+	  int number = 1;
+	}
+	{
+		number=num() {if (condition == true) {world.putBalloons(number);}}
+	}
+	
+	
+	//ALREADY EXISTING FUNCTIONS
+
+	void put() :
+	{
+		int f=1;	
+	}
+	{
+		( <CHIPS>    "," f=num() {world.putChips(f); salida = "Command:  Put Chips"; })
+		|  	  ( <BALLOONS>   "," f=num() {world.putBalloons(f); salida = "Command:  Put Balloons";})	 
+
+	}
+
+	void get0() :
+	{
+		int f=1;	
+	}
+	{
+		( <CHIPS>   "," f=num() {world.pickChips(f);salida = "Command:  Pick chips";})
+		|  	  ( <BALLOONS>   "," f=num() {world.grabBalloons(f);salida="Command:  Pick balloons";})	 
+
+	}
+
+	//ejecuciones simples con lista
+
+	
+
+/*TO DO
+-dentro de los blockes de ejecucion, if while else repeat, separadores punto y coma
+-recursión
+-estructura bloques
+-name = algo
+*/
+	
